@@ -483,6 +483,21 @@ int GlyphManager::GetFontIndex(strings::UniChar unicodePoint)
   return FindFontIndexInBlock(*m_impl->m_lastUsedBlock, unicodePoint);
 }
 
+int GlyphManager::GetFontIndex(std::u16string_view sv)
+{
+#ifdef DEBUG
+  auto uniString = strings::MakeUniString(sv);
+  auto const fontIndex = GetFontIndex(uniString.front());
+  for (size_t i = 1; i < uniString.size(); ++i)
+    ASSERT_EQUAL(fontIndex, GetFontIndex(uniString[i]),  ());
+  return fontIndex;
+#else
+  // Only get font for the first character.
+  auto it = sv.begin();
+  return GetFontIndex(utf8::unchecked::next16(it));
+#endif  // DEBUG
+}
+
 int GlyphManager::GetFontIndexImmutable(strings::UniChar unicodePoint) const
 {
   TUniBlockIter iter = std::lower_bound(m_impl->m_blocks.begin(), m_impl->m_blocks.end(), unicodePoint,

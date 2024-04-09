@@ -262,6 +262,16 @@ bool EqualNoCase(std::string const & s1, std::string const & s2)
   return MakeLowerCase(s1) == MakeLowerCase(s2);
 }
 
+UniString MakeUniString(std::u16string_view utf16)
+{
+  UniString result;
+  result.reserve(utf16.size());
+  auto it = utf16.begin();
+  while (it != utf16.end())
+    result.push_back(utf8::unchecked::next16(it));
+  return result;
+}
+
 UniString MakeUniString(std::string_view utf8s)
 {
   UniString result;

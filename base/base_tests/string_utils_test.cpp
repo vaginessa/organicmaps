@@ -838,8 +838,11 @@ UNIT_TEST(GetUniString)
 
 UNIT_TEST(MakeUniString_Smoke)
 {
-  char const s[] = "Hello!";
-  TEST_EQUAL(strings::UniString(&s[0], &s[0] + ARRAY_SIZE(s) - 1), strings::MakeUniString(s), ());
+  char const s[] = "Привет!";
+  auto const control = strings::UniString(&s[0], &s[0] + ARRAY_SIZE(s) - 1);
+  TEST_EQUAL(control, strings::MakeUniString(s), ());
+
+  TEST_EQUAL(strings::MakeUniString(u"Привет!"), control, ());
 }
 
 UNIT_TEST(Normalize)
