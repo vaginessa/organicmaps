@@ -4,11 +4,14 @@
 #include "base/string_utils.hpp"
 
 #include "drape/glyph.hpp"
+#include "harfbuzz_shape.hpp"
 
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
+
+struct hb_font_t;
 
 namespace dp
 {
@@ -42,6 +45,9 @@ public:
 
   int GetFontIndex(strings::UniChar unicodePoint);
   int GetFontIndex(std::u16string_view sv);
+
+  void ShapeText(strings::UniChar c, hb_buffer_t * hbBuffer, int pixelHeight, text_shape::TextMetrics & outMetrics);
+  GlyphImage GetGlyphImage(int fontIndex, int16_t glyphId, int pixelHeight, bool sdf);
 private:
   // Immutable version can be called from any thread and doesn't require internal synchronization.
   int GetFontIndexImmutable(strings::UniChar unicodePoint) const;

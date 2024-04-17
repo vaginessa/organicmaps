@@ -7,14 +7,37 @@
 
 #include <string>
 
-#include <hb.h>
-#include <hb-icu.h>
+#include <harfbuzz/hb.h>
+#include <harfbuzz/hb-icu.h>
 #include <unicode/ubidi.h>  // ubidi_open, ubidi_setPara
 #include <unicode/uscript.h>  // UScriptCode
 #include <unicode/utf16.h>  // U16_NEXT
 
 namespace text_shape
 {
+// class FontManager
+// {
+//   struct Impl;
+// public:
+//   FontManager();
+//
+// private:
+//   std::unique_ptr<Impl> m_impl;
+// };
+//
+// struct FontManager::Impl
+// {
+//
+// };
+//
+// FontManager::FontManager() : m_impl(std::make_unique<Impl>())
+// {
+//   // Platform::FilesList fonts;
+//   // GetPlatform().GetFontNames(fonts);
+//
+// }
+
+
 namespace
 {
 // The maximum number of scripts a Unicode character can belong to. This value
@@ -242,7 +265,7 @@ void GetSingleTextLineRuns(TextRuns & runs)
   if (U_FAILURE(error))
   {
     LOG(LERROR, ("ubidi_setPara failed with code", error));
-    auto constexpr kDefaultFont = 0;
+    //auto constexpr kDefaultFont = 0;
     runs.substrings.emplace_back(0, 0, HB_SCRIPT_UNKNOWN, HB_DIRECTION_INVALID);
     return;
   }
@@ -478,29 +501,33 @@ void ShapeRunWithFont(FontParams const & fontParams, TextRun & run)
 }
 */
 
-
-/*
-void ShapeRuns(FontParams const & fontParams, TextRuns& outRuns)
+TextMetrics ShapeRuns(TextRuns const & runs, ShapeHarfbuzzBufferFn && shaperFn, int fontPixelHeight, hb_language_t hbLanguage)
 {
-  for (auto & run : outRuns.runs)
+  TextMetrics allGlyphs;
+  // TODO(AB): Cache runs.
+  // TODO(AB): Cache buffer.
+  hb_buffer_t *buf = hb_buffer_create();
+  for (auto const & substring : runs.substrings)
   {
-    // TODO(AB): Cache runs.
+    hb_buffer_clear_contents(buf);
 
-    ShapeRunWithFont(fontParams, run)
+    // TODO(AB): Some substrings use different fonts.
+    std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
+    auto it{runs.text.begin() + substring.m_start};
+    auto const c32 = utf8::unchecked::next16(it);
 
-    internal::TextRunHarfBuzz::ShapeOutput output;
-    ShapeRunWithFont(cache_key, &output);
-    run->UpdateFontParamsAndShape(font_params, output);
-    if (can_use_cache)
-      cache.get()->Put(cache_key, output);
-    //    }
+    hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(sv.data()), static_cast<int>(sv.size()), substring.m_start, substring.m_length);
+    hb_buffer_set_direction(buf, substring.m_direction);
+    hb_buffer_set_script(buf, substring.m_script);
+    hb_buffer_set_language(buf, hbLanguage);
 
-    // Check to see if we still have missing glyphs.
-    if (run->shape.missing_glyph_count)
-      runs_with_missing_glyphs.push_back(run);
+    shaperFn(c32, buf, fontPixelHeight, allGlyphs);
   }
-  in_out_runs->swap(runs_with_missing_glyphs);
-}*/
+  // Tidy up.
+  hb_buffer_destroy(buf);
+
+  return allGlyphs;
+}
 
 TextRuns ItemizeText(std::string_view utf8)
 {
@@ -509,6 +536,7 @@ TextRuns ItemizeText(std::string_view utf8)
 
   // TODO(AB): Can unnecessary conversion/allocation be avoided?
   TextRuns textRuns {strings::ToUtf16(utf8), {}};
+  // TODO(AB): Runs are not split by breaking chars and by different fonts.
   GetSingleTextLineRuns(textRuns);
   return textRuns;
 }
@@ -520,7 +548,7 @@ void ReorderRTL(TextRuns & runs)
   auto const end = runs.substrings.end();
   // TODO(AB): Line (default rendering) direction is determined by the first run. It should be defined as a parameter depending on the language.
   auto const lineDirection = it->m_direction;
-  while(it != end)
+  while (it != end)
   {
     if (it->m_direction == lineDirection)
       ++it;
@@ -536,16 +564,19 @@ void ReorderRTL(TextRuns & runs)
     std::reverse(runs.substrings.begin(), end);
 }
 
-TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, int8_t lang)
+TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, int8_t lang, ShapeHarfbuzzBufferFn && shapeFn)
 {
-  //ShapeRuns(fontParams, textRuns);
-  // TODO
-  return TextMetrics{};
+  auto const runs = ItemizeText(utf8);
+  // TODO(AB): Optimize language conversion.
+  hb_language_t const hbLanguage = OrganicMapsLanguageToHarfbuzzLanguage(lang);
+
+  return ShapeRuns(runs, std::move(shapeFn), fontPixelHeight, hbLanguage);
 }
 
-TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, char const * lang)
+TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, char const * lang, ShapeHarfbuzzBufferFn && shapeFn)
 {
-  return ShapeText(utf8, fontPixelHeight, StringUtf8Multilang::GetLangIndex(lang));
+  // TODO(AB): Pass lang as string?
+  return ShapeText(utf8, fontPixelHeight, StringUtf8Multilang::GetLangIndex(lang), std::move(shapeFn));
 }
 
 }  // namespace text_shape

@@ -4,7 +4,9 @@
 
 #include <vector>
 
-#include <hb.h>
+#include <harfbuzz/hb.h>
+
+namespace dp { class GlyphManager; }
 
 // Now the font is autodetected from the codepoint.
 // TODO:(AB): Pass custom fonts to render with a fallback.
@@ -38,40 +40,50 @@ struct TextRun
 {
   // TODO(AB): Use 1 byte or 2 bytes.
   int32_t m_start;  // Offset to the segment start in the string.
-  int32_t m_length;    // Offset to the segment end in the string.
+  int32_t m_length;
   hb_script_t m_script;
   hb_direction_t m_direction;
   TextRun(int32_t start, int32_t length, hb_script_t script, hb_direction_t direction)
-  : m_start(start), m_length(length), m_script(script), m_direction((direction)) {}
+  : m_start(start), m_length(length), m_script(script), m_direction(direction) {}
 };
 
 struct TextRuns
 {
   std::u16string text;
   std::vector<TextRun> substrings;
-  std::vector<size_t> runOrder;
+  // TODO(AB): Use indexes to order runs.
+  //std::vector<size_t> runOrder;
 };
 
 struct GlyphMetrics
 {
-  uint16_t glyphId;
-  float m_xAdvance;
-  float m_yAdvance;
-  float m_xOffset;
-  float m_yOffset;
+  int16_t m_font;
+  uint16_t m_glyphId;
+  // TODO(AB): Store original font units or floats?
+  int32_t m_xOffset;
+  int32_t m_yOffset;
+  int32_t m_xAdvance;
+  // yAdvance is used only in vertical text layouts.
 };
 
 struct TextMetrics
 {
-  float m_width;
-  float m_height;
+  int32_t m_width {0};
   std::vector<GlyphMetrics> m_glyphs;
+
+  void AddGlyphMetrics(int16_t font, uint16_t glyphId, int32_t xOffset, int32_t yOffset, int32_t xAdvance)
+  {
+    m_glyphs.push_back({font, glyphId, xOffset, yOffset, xAdvance});
+    m_width += xAdvance;
+  }
 };
+
+using ShapeHarfbuzzBufferFn = std::function<void (strings::UniChar c, hb_buffer_t * hbBuffer, int pixelHeight, TextMetrics & out)>;
 
 // Shapes a single line of text without newline \r or \n characters.
 // Any line breaking/trimming should be done by the caller.
 TextRuns ItemizeText(std::string_view utf8);
 void ReorderRTL(TextRuns & runs);
-TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, int8_t lang);
-TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, char const * lang);
+TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, int8_t lang, ShapeHarfbuzzBufferFn && shapeFn);
+TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, char const * lang, ShapeHarfbuzzBufferFn && shapeFn);
 }  // namespace text_shape

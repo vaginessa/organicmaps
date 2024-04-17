@@ -21,12 +21,20 @@
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
-#include <hb.h>
-
-#include <hb-ft.h>
+#include FT_MODULE_H
+#include <harfbuzz/hb-ft.h>
+#include <harfbuzz/hb.h>
 
 namespace glyph_mng_tests
 {
+std::ostream& operator<<(std::ostream & stream, const text_shape::TextMetrics & tm)
+{
+  stream << "width=" << tm.m_width << " [\n";
+  for (auto const & gm : tm.m_glyphs)
+    stream << "font=" << gm.m_font << ", id=" << gm.m_glyphId << ", xo=" << gm.m_xOffset << ", yo=" << gm.m_yOffset << ", xa=" << gm.m_xAdvance << '\n';
+  stream << ']';
+  return stream;
+}
 class GlyphRenderer
 {
   FT_Library m_freetypeLibrary;
@@ -35,11 +43,14 @@ class GlyphRenderer
   int m_fontPixelSize;
   char const * m_lang;
 
+  static constexpr FT_Int kSdfSpread {4};
+
 public:
   GlyphRenderer()
   {
     // Initialize FreeType
     TEST_EQUAL(0, FT_Init_FreeType(&m_freetypeLibrary), ("Can't initialize FreeType"));
+    TEST_EQUAL(0, FT_Property_Set(m_freetypeLibrary, "sdf", "spread", &kSdfSpread), ("Can't change default SDF spread"));
 
     dp::GlyphManager::Params args;
     args.m_uniBlocks = "unicode_blocks.txt";
@@ -63,14 +74,40 @@ public:
     m_lang = lang;
   }
 
+  static float Smoothstep(float edge0, float edge1, float x)
+  {
+    x = std::clamp((x - edge0) / (edge1 - edge0), 0.0f, 1.0f);
+    return x * x * (3 - 2 * x);
+  }
+
+  static float PixelColorFromDistance(float distance)
+  {
+    //float const normalizedDistance = (distance - 128.f) / 128.f;
+    float const normalizedDistance = distance / 255.f;
+    static constexpr float kFontScale = 1.f;
+    static constexpr float kSmoothing = 0.25f / (kSdfSpread * kFontScale);
+    float const alpha = Smoothstep(0.5f - kSmoothing, 0.5f + kSmoothing, normalizedDistance);
+    return 255.f * alpha;
+  }
+
   void RenderGlyphs(QPaintDevice * device)
   {
     QPainter painter(device);
     painter.fillRect(QRectF(0.0, 0.0, device->width(), device->height()), Qt::white);
 
-    auto const hbLanguage = hb_language_from_string(m_lang, -1);
+    text_shape::TextMetrics const metrics = text_shape::ShapeText(m_utf8, m_fontPixelSize, m_lang, [&](auto c, auto buf, auto height, auto & out) { m_mng->ShapeText(c, buf, height, out); });
+    //std::cout << metrics << '\n';
 
     QPoint hbPen(10, 100);
+
+    for (auto const & gm : metrics.m_glyphs)
+    {
+      auto image = m_mng->GetGlyphImage(gm.m_font, gm.m_glyphId, m_fontPixelSize, false /* sdf */);
+      image.Destroy();
+    }
+    /*
+    auto const hbLanguage = hb_language_from_string(m_lang, -1);
+
     auto runs = text_shape::ItemizeText(m_utf8);
     text_shape::ReorderRTL(runs);
     for (auto const& substring : runs.substrings)
@@ -89,7 +126,8 @@ public:
       std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
       //auto const fontIndex = m_mng->GetFontIndex(sv);
 
-      auto reader = GetPlatform().GetReader("00_NotoNaskhArabic-Regular.ttf");
+      // "00_NotoNaskhArabic-Regular.ttf"
+      auto reader = GetPlatform().GetReader("06_code2000.ttf");
       auto fontFile = reader->GetName();
       FT_Face arabicFace;
       if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &arabicFace)) {
@@ -97,7 +135,7 @@ public:
         return;
       }
       // Set character size
-      FT_Set_Pixel_Sizes(arabicFace, 0 /* pixel_width */, m_fontPixelSize /* pixel_height */);
+      FT_Set_Pixel_Sizes(arabicFace, 0 , m_fontPixelSize );
       // This also works.
       // if (FT_Set_Char_Size(face, 0, m_fontPixelSize << 6, 0, 0)) {
       //   std::cerr << "Can't set character size\n";
@@ -118,20 +156,39 @@ public:
       hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
       hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
 
-      for (unsigned int i = 0; i < glyph_count; i++) {
+      for (unsigned int i = 0; i < glyph_count; i++)
+      {
         hb_codepoint_t const glyphid = glyph_info[i].codepoint;
 
-        FT_Int32 const flags =  FT_LOAD_RENDER;
+        FT_Int32 const flags =  FT_LOAD_DEFAULT;
         FT_Load_Glyph(arabicFace, glyphid, flags);
+        FT_Render_Glyph(arabicFace->glyph, FT_RENDER_MODE_SDF);
 
         FT_GlyphSlot slot = arabicFace->glyph;
-        //      FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
 
         FT_Bitmap const & ftBitmap = slot->bitmap;
 
         auto const buffer = ftBitmap.buffer;
         auto const width = ftBitmap.width;
         auto const height = ftBitmap.rows;
+
+        for (unsigned h = 0; h < height; ++h)
+        {
+          for (unsigned w = 0; w < width; ++w)
+          {
+           auto curPixelAddr = buffer + h * width + w;
+           float currPixel = *curPixelAddr;
+           //float sd = (currPixel - 128.f) / spread;
+           // float sd = currPixel - 128.0f;
+           // // Convert to pixel values.
+           // sd = ( sd / 128.0f ) * spread;
+           // // Store `sd` in a buffer or use as required.
+            currPixel = PixelColorFromDistance(currPixel);
+           //currPixel = currPixel - 128.f <= -2 ? 0 : 255;
+           *curPixelAddr = (unsigned char)currPixel;
+          }
+        }
+
         auto const bearing_x = slot->metrics.horiBearingX;//slot->bitmap_left;
         auto const bearing_y = slot->metrics.horiBearingY;//slot->bitmap_top;
 
@@ -147,7 +204,7 @@ public:
           QPoint currentPen = hbPen;
           currentPen.rx() += x_offset;
           currentPen.ry() -= y_offset;
-          painter.drawImage(currentPen, CreateImage(width, height, buffer), QRect(0, 0, width, height));
+          painter.drawImage(currentPen, CreateImage(width, height, buffer), QRect(kSdfSpread, kSdfSpread, width - 2*kSdfSpread, height - 2*kSdfSpread));
         }
         hbPen += QPoint(x_advance, y_advance);
       }
@@ -157,7 +214,7 @@ public:
       hb_font_destroy(font);
       FT_Done_Face(arabicFace);
     }
-
+*/
     //////////////////////////////////////////////////////////////////
     // QT text renderer.
     {
@@ -210,16 +267,16 @@ UNIT_TEST(GlyphLoadingTest)
   renderer.SetString("الحلّة گلها"" كسول الزنجبيل القط""56""عين علي (الحربية)""123"" اَلْعَرَبِيَّةُ", 27, "ar");
   RunTestLoop("Test2", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  renderer.SetString("12345""گُلها""12345""گُلها""12345", 27, "ar");
-  RunTestLoop("Test3", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  // renderer.SetString("12345""گُلها""12345""گُلها""12345", 27, "ar");
+  // RunTestLoop("Test3", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 //
 //  renderer.SetString("മനക്കലപ്പടി");
 //  RunTestLoop("Test4", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  renderer.SetString("Test 12 345 ""گُلها""678 9000 Test", 27, "ar");
-  RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  // renderer.SetString("Test 12 345 ""گُلها""678 9000 Test", 27, "ar");
+  // RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  renderer.SetString("Test 12 345 Test", 27, "ar");
+  renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", 27, "be");
   RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
 #endif

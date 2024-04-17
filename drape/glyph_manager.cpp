@@ -5,20 +5,25 @@
 
 #include "platform/platform.hpp"
 
+#include "coding/hex.hpp"
 #include "coding/reader.hpp"
 
-#include "base/string_utils.hpp"
+#include "base/internal/message.hpp"
 #include "base/logging.hpp"
 #include "base/macros.hpp"
 #include "base/math.hpp"
+#include "base/string_utils.hpp"
 
+#include <ft2build.h>
+#include <harfbuzz/hb-ft.h>
 #include <limits>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include <ft2build.h>
+#include "3party/sdf_image/sdf_image.h"
+
 #include FT_FREETYPE_H
 #include FT_MODULE_H
 #include FT_SYSTEM_H
@@ -136,6 +141,9 @@ public:
   ~Font()
   {
     ASSERT(m_fontFace, ());
+    if (m_harfbuzzFont)
+      hb_font_destroy(m_harfbuzzFont);
+
     FREETYPE_CHECK(FT_Done_Face(m_fontFace));
   }
 
@@ -178,6 +186,39 @@ public:
     return result;
   }
 
+  GlyphImage GetGlyphImage(int16_t glyphId, int pixelHeight, bool sdf) const
+  {
+    FREETYPE_CHECK(FT_Set_Pixel_Sizes(m_fontFace, 0, pixelHeight));
+    FREETYPE_CHECK(FT_Load_Glyph(m_fontFace, glyphId, FT_LOAD_DEFAULT | FT_LOAD_TARGET_NORMAL));
+    FREETYPE_CHECK(FT_Render_Glyph(m_fontFace->glyph, sdf ? FT_RENDER_MODE_SDF : FT_RENDER_MODE_NORMAL));
+
+    FT_Bitmap const bitmap = m_fontFace->glyph->bitmap;
+
+    SharedBufferManager::shared_buffer_ptr_t data;
+    uint32_t imageWidth = bitmap.width;
+    uint32_t imageHeight = bitmap.rows;
+    if (bitmap.buffer != nullptr)
+    {
+      // TODO(AB): Use border if necessary for compatibility with the existing code.
+      static constexpr uint32_t kSdfBorder {0};
+      imageHeight += 2 * kSdfBorder;
+      imageWidth += 2 * kSdfBorder;
+
+      data = SharedBufferManager::instance().reserveSharedBuffer(imageWidth * imageHeight);
+      auto ptr = data->data();
+      std::memset(ptr, 0, data->size());
+
+      for (size_t row = kSdfBorder; row < bitmap.rows + kSdfBorder; ++row)
+      {
+        size_t const dstBaseIndex = row * imageWidth + kSdfBorder;
+        size_t const srcBaseIndex = (row - kSdfBorder) * bitmap.pitch;
+        for (int column = 0; column < bitmap.pitch; ++column)
+          ptr[dstBaseIndex + column] = bitmap.buffer[srcBaseIndex + column];
+      }
+    }
+    return {imageWidth, imageHeight, bitmap.rows, bitmap.pitch, data};
+  }
+
   void GetCharcodes(std::vector<FT_ULong> & charcodes)
   {
     FT_UInt gindex;
@@ -213,12 +254,48 @@ public:
 
   std::string GetName() const { return std::string(m_fontFace->family_name) + ':' + m_fontFace->style_name; }
 
+  void Shape(hb_buffer_t * hbBuffer, int fontPixelSize, int fontIndex, text_shape::TextMetrics & outMetrics)
+  {
+    // TODO(AB): Do not set the same font size every time.
+    FREETYPE_CHECK(FT_Set_Pixel_Sizes(m_fontFace, 0 /* pixel_width */, fontPixelSize /* pixel_height */));
+    if (!m_harfbuzzFont)
+      m_harfbuzzFont = hb_ft_font_create(m_fontFace, nullptr);
+
+    // Shape!
+    hb_shape(m_harfbuzzFont, hbBuffer, nullptr, 0);
+
+    // Get the glyph and position information.
+    unsigned int glyphCount;
+    hb_glyph_info_t const * glyphInfo = hb_buffer_get_glyph_infos(hbBuffer, &glyphCount);
+    hb_glyph_position_t const * glyphPos = hb_buffer_get_glyph_positions(hbBuffer, &glyphCount);
+
+    for (unsigned int i = 0; i < glyphCount; ++i)
+    {
+      // TODO(AB): Check for missing glyph ID?
+      auto const glyphId = static_cast<uint16_t>(glyphInfo[i].codepoint);
+
+      static FT_Int32 constexpr flags =  FT_LOAD_DEFAULT;
+      FT_Load_Glyph(m_fontFace, glyphId, flags);
+
+      auto const & currPos = glyphPos[i];
+      // TODO(AB): Use floats for subpixel precision?
+      hb_position_t const xOffset  = (currPos.x_offset + static_cast<int32_t>(m_fontFace->glyph->metrics.horiBearingX)) >> 6;
+      hb_position_t const yOffset  = (currPos.y_offset + static_cast<int32_t>(m_fontFace->glyph->metrics.horiBearingY)) >> 6;
+      hb_position_t const xAdvance = currPos.x_advance >> 6;
+
+      outMetrics.AddGlyphMetrics(static_cast<int16_t>(fontIndex), glyphId, xOffset, yOffset, xAdvance);
+    }
+
+  }
+
 private:
   ReaderPtr<Reader> m_fontReader;
   FT_StreamRec_ m_stream;
   FT_Face m_fontFace;
 
   std::set<strings::UniChar> m_readyGlyphs;
+
+  hb_font_t* m_harfbuzzFont {nullptr};
 };
 
 // Information about single unicode block.
@@ -485,17 +562,10 @@ int GlyphManager::GetFontIndex(strings::UniChar unicodePoint)
 
 int GlyphManager::GetFontIndex(std::u16string_view sv)
 {
-#ifdef DEBUG
-  auto uniString = strings::MakeUniString(sv);
-  auto const fontIndex = GetFontIndex(uniString.front());
-  for (size_t i = 1; i < uniString.size(); ++i)
-    ASSERT_EQUAL(fontIndex, GetFontIndex(uniString[i]),  ());
-  return fontIndex;
-#else
   // Only get font for the first character.
+  // TODO(AB): Make sure that text runs are split by fonts.
   auto it = sv.begin();
   return GetFontIndex(utf8::unchecked::next16(it));
-#endif  // DEBUG
 }
 
 int GlyphManager::GetFontIndexImmutable(strings::UniChar unicodePoint) const
@@ -580,4 +650,22 @@ Glyph const & GlyphManager::GetInvalidGlyph() const
 
   return s_glyph;
 }
+
+void GlyphManager::ShapeText(strings::UniChar c, hb_buffer_t * hbBuffer, int pixelHeight, text_shape::TextMetrics & outMetrics)
+{
+  int const fontIndex = GetFontIndex(c);
+  if (fontIndex < 0)
+  {
+    LOG(LWARNING, ("Skip run because no font was found for character", NumToHex(c)));
+    return;
+  }
+
+  m_impl->m_fonts[fontIndex]->Shape(hbBuffer, pixelHeight, fontIndex, outMetrics);
+}
+
+GlyphImage GlyphManager::GetGlyphImage(int fontIndex, int16_t glyphId, int pixelHeight, bool sdf)
+{
+  return m_impl->m_fonts[fontIndex]->GetGlyphImage(glyphId, pixelHeight, sdf);
+}
+
 }  // namespace dp

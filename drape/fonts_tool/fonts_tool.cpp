@@ -1,3 +1,4 @@
+#include "drape/glyph_manager.hpp"
 #include "drape/harfbuzz_shape.hpp"
 
 #include "platform/platform.hpp"
@@ -13,17 +14,20 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
-void ItemizeLine(std::string str)
+void ItemizeLine(std::string & str, dp::GlyphManager & glyphManager)
 {
   strings::Trim(str);
   if (str.empty())
     return;
 
   auto const segments = text_shape::ItemizeText(str);
-  std::cout << str << " (runs=" << segments.substrings.size() << ")" << "\n";
+  //std::cout << str << " (runs=" << segments.substrings.size() << ")" << "\n";
   for (const auto & run : segments.substrings)
-    std::cout << DebugPrint(std::u16string_view{segments.text.data() + run.m_start, static_cast<size_t>(run.m_length)}) << '|';
-  std::cout << "\b \b\n";
+  {
+    std::u16string_view sv{segments.text.data() + run.m_start, static_cast<size_t>(run.m_length)};
+    auto fontIndex = glyphManager.GetFontIndex(sv);
+    //std::cout << DebugPrint(sv) << '|';
+  }
 }
 
 int main(int argc, char** argv)
@@ -33,6 +37,14 @@ int main(int argc, char** argv)
     std::cerr << "Usage: " << argv[0] << " [text file with utf8 strings or any arbitrary text string]\n";
     return -1;
   }
+
+  dp::GlyphManager::Params params;
+  params.m_uniBlocks = "unicode_blocks.txt";
+  params.m_whitelist = "fonts_whitelist.txt";
+  params.m_blacklist = "fonts_blacklist.txt";
+  GetPlatform().GetFontNames(params.m_fonts);
+
+  dp::GlyphManager glyphManager(params);
 
   // Platform::FilesList ttfFiles;
   // GetPlatform().GetFontNames(ttfFiles);
@@ -66,20 +78,20 @@ int main(int argc, char** argv)
 /////////////////////////
   if (Platform::IsFileExistsByFullPath(argv[1]))
   {
-    std::ifstream file(argv[2]);
+    std::ifstream file(argv[1]);
     std::string line;
     while (file.good())
     {
       std::getline(file, line);
-      ItemizeLine(line);
+      ItemizeLine(line, glyphManager);
     }
   }
   else
   {
     // Get all args as one string.
     std::vector<std::string> const args(argv + 1, argv + argc);
-    auto const line = std::accumulate(args.begin(), args.end(), std::string{});
-    ItemizeLine(line);
+    auto line = std::accumulate(args.begin(), args.end(), std::string{});
+    ItemizeLine(line, glyphManager);
   }
   return 0;
 }
