@@ -43,14 +43,15 @@ class GlyphRenderer
   int m_fontPixelSize;
   char const * m_lang;
 
-  static constexpr FT_Int kSdfSpread {4};
+  static constexpr FT_Int kSdfSpread {2};
 
 public:
   GlyphRenderer()
   {
     // Initialize FreeType
     TEST_EQUAL(0, FT_Init_FreeType(&m_freetypeLibrary), ("Can't initialize FreeType"));
-    TEST_EQUAL(0, FT_Property_Set(m_freetypeLibrary, "sdf", "spread", &kSdfSpread), ("Can't change default SDF spread"));
+    for (auto const module : {"sdf", "bsdf"})
+      TEST_EQUAL(0, FT_Property_Set(m_freetypeLibrary, module, "spread", &kSdfSpread), ());
 
     dp::GlyphManager::Params args;
     args.m_uniBlocks = "unicode_blocks.txt";
@@ -105,7 +106,7 @@ public:
       auto image = m_mng->GetGlyphImage(gm.m_font, gm.m_glyphId, m_fontPixelSize, false /* sdf */);
       image.Destroy();
     }
-    /*
+
     auto const hbLanguage = hb_language_from_string(m_lang, -1);
 
     auto runs = text_shape::ItemizeText(m_utf8);
@@ -160,7 +161,7 @@ public:
       {
         hb_codepoint_t const glyphid = glyph_info[i].codepoint;
 
-        FT_Int32 const flags =  FT_LOAD_DEFAULT;
+        FT_Int32 const flags =  FT_LOAD_RENDER;
         FT_Load_Glyph(arabicFace, glyphid, flags);
         FT_Render_Glyph(arabicFace->glyph, FT_RENDER_MODE_SDF);
 
@@ -214,7 +215,7 @@ public:
       hb_font_destroy(font);
       FT_Done_Face(arabicFace);
     }
-*/
+
     //////////////////////////////////////////////////////////////////
     // QT text renderer.
     {
