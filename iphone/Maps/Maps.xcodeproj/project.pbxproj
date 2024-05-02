@@ -477,6 +477,13 @@
 		ED79A5D62BDF8D6100952D1F /* iCloudDocumentsDirectoryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5CE2BDF8D6100952D1F /* iCloudDocumentsDirectoryMonitor.swift */; };
 		ED79A5D72BDF8D6100952D1F /* SynchronizationStateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5CF2BDF8D6100952D1F /* SynchronizationStateManager.swift */; };
 		ED79A5D82BDF8D6100952D1F /* DefaultLocalDirectoryMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5D02BDF8D6100952D1F /* DefaultLocalDirectoryMonitor.swift */; };
+		ED79A5E62BDF8DD800952D1F /* LocalDirectoryMonitorDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5DC2BDF8DD800952D1F /* LocalDirectoryMonitorDelegateMock.swift */; };
+		ED79A5E72BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5DD2BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests.swift */; };
+		ED79A5E82BDF8DD800952D1F /* SynchronizationStateManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5DE2BDF8DD800952D1F /* SynchronizationStateManagerTests.swift */; };
+		ED79A5E92BDF8DD800952D1F /* UbiquitousDirectoryMonitorDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5E02BDF8DD800952D1F /* UbiquitousDirectoryMonitorDelegateMock.swift */; };
+		ED79A5EA2BDF8DD800952D1F /* iCloudDirectoryMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5E12BDF8DD800952D1F /* iCloudDirectoryMonitorTests.swift */; };
+		ED79A5EB2BDF8DD800952D1F /* FileManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5E22BDF8DD800952D1F /* FileManagerMock.swift */; };
+		ED79A5EC2BDF8DD800952D1F /* MetadataItemStubs.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED79A5E32BDF8DD800952D1F /* MetadataItemStubs.swift */; };
 		ED9966802B94FBC20083CE55 /* ColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED99667D2B94FBC20083CE55 /* ColorPicker.swift */; };
 		EDBD68072B625724005DD151 /* LocationServicesDisabledAlert.xib in Resources */ = {isa = PBXBuildFile; fileRef = EDBD68062B625724005DD151 /* LocationServicesDisabledAlert.xib */; };
 		EDBD680B2B62572E005DD151 /* LocationServicesDisabledAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDBD680A2B62572E005DD151 /* LocationServicesDisabledAlert.swift */; };
@@ -1375,6 +1382,13 @@
 		ED79A5CE2BDF8D6100952D1F /* iCloudDocumentsDirectoryMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iCloudDocumentsDirectoryMonitor.swift; sourceTree = "<group>"; };
 		ED79A5CF2BDF8D6100952D1F /* SynchronizationStateManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SynchronizationStateManager.swift; sourceTree = "<group>"; };
 		ED79A5D02BDF8D6100952D1F /* DefaultLocalDirectoryMonitor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultLocalDirectoryMonitor.swift; sourceTree = "<group>"; };
+		ED79A5DC2BDF8DD800952D1F /* LocalDirectoryMonitorDelegateMock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LocalDirectoryMonitorDelegateMock.swift; sourceTree = "<group>"; };
+		ED79A5DD2BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DefaultLocalDirectoryMonitorTests.swift; sourceTree = "<group>"; };
+		ED79A5DE2BDF8DD800952D1F /* SynchronizationStateManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SynchronizationStateManagerTests.swift; sourceTree = "<group>"; };
+		ED79A5E02BDF8DD800952D1F /* UbiquitousDirectoryMonitorDelegateMock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UbiquitousDirectoryMonitorDelegateMock.swift; sourceTree = "<group>"; };
+		ED79A5E12BDF8DD800952D1F /* iCloudDirectoryMonitorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = iCloudDirectoryMonitorTests.swift; sourceTree = "<group>"; };
+		ED79A5E22BDF8DD800952D1F /* FileManagerMock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FileManagerMock.swift; sourceTree = "<group>"; };
+		ED79A5E32BDF8DD800952D1F /* MetadataItemStubs.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MetadataItemStubs.swift; sourceTree = "<group>"; };
 		ED99667D2B94FBC20083CE55 /* ColorPicker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ColorPicker.swift; sourceTree = "<group>"; };
 		EDBD68062B625724005DD151 /* LocationServicesDisabledAlert.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = LocationServicesDisabledAlert.xib; sourceTree = "<group>"; };
 		EDBD680A2B62572E005DD151 /* LocationServicesDisabledAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationServicesDisabledAlert.swift; sourceTree = "<group>"; };
@@ -2991,6 +3005,7 @@
 			isa = PBXGroup;
 			children = (
 				ED1ADA322BC6B1B40029209F /* CarPlayServiceTests.swift */,
+				ED79A5DA2BDF8DD800952D1F /* CloudSynchronizationTests */,
 			);
 			path = Tests;
 			sourceTree = "<group>";
@@ -3014,6 +3029,36 @@
 				ED79A5D02BDF8D6100952D1F /* DefaultLocalDirectoryMonitor.swift */,
 			);
 			path = iCloud;
+			sourceTree = "<group>";
+		};
+		ED79A5DA2BDF8DD800952D1F /* CloudSynchronizationTests */ = {
+			isa = PBXGroup;
+			children = (
+				ED79A5DB2BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests */,
+				ED79A5DE2BDF8DD800952D1F /* SynchronizationStateManagerTests.swift */,
+				ED79A5DF2BDF8DD800952D1F /* iCloudDirectoryMonitorTests */,
+				ED79A5E32BDF8DD800952D1F /* MetadataItemStubs.swift */,
+			);
+			path = CloudSynchronizationTests;
+			sourceTree = "<group>";
+		};
+		ED79A5DB2BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests */ = {
+			isa = PBXGroup;
+			children = (
+				ED79A5DC2BDF8DD800952D1F /* LocalDirectoryMonitorDelegateMock.swift */,
+				ED79A5DD2BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests.swift */,
+			);
+			path = DefaultLocalDirectoryMonitorTests;
+			sourceTree = "<group>";
+		};
+		ED79A5DF2BDF8DD800952D1F /* iCloudDirectoryMonitorTests */ = {
+			isa = PBXGroup;
+			children = (
+				ED79A5E02BDF8DD800952D1F /* UbiquitousDirectoryMonitorDelegateMock.swift */,
+				ED79A5E12BDF8DD800952D1F /* iCloudDirectoryMonitorTests.swift */,
+				ED79A5E22BDF8DD800952D1F /* FileManagerMock.swift */,
+			);
+			path = iCloudDirectoryMonitorTests;
 			sourceTree = "<group>";
 		};
 		ED99667C2B94FBC20083CE55 /* ColorPicker */ = {
@@ -4507,7 +4552,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED79A5EA2BDF8DD800952D1F /* iCloudDirectoryMonitorTests.swift in Sources */,
 				ED1ADA332BC6B1B40029209F /* CarPlayServiceTests.swift in Sources */,
+				ED79A5E62BDF8DD800952D1F /* LocalDirectoryMonitorDelegateMock.swift in Sources */,
+				ED79A5EC2BDF8DD800952D1F /* MetadataItemStubs.swift in Sources */,
+				ED79A5EB2BDF8DD800952D1F /* FileManagerMock.swift in Sources */,
+				ED79A5E92BDF8DD800952D1F /* UbiquitousDirectoryMonitorDelegateMock.swift in Sources */,
+				ED79A5E82BDF8DD800952D1F /* SynchronizationStateManagerTests.swift in Sources */,
+				ED79A5E72BDF8DD800952D1F /* DefaultLocalDirectoryMonitorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
