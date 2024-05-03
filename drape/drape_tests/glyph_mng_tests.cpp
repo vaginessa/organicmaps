@@ -230,7 +230,7 @@ public:
     //////////////////////////////////////////////////////////////////
     // Old drape renderer.
     QPoint pen(10, 200);
-    for (auto c : m_toDraw)
+    for (auto c : m_bidiToDraw)
     {
       auto g = m_mng->GetGlyph(c);
 
@@ -241,7 +241,7 @@ public:
         currentPen.rx() += g.m_metrics.m_xOffset;
         currentPen.ry() -= g.m_metrics.m_yOffset;
         painter.drawImage(currentPen, CreateImage(g.m_image.m_width, g.m_image.m_height, d),
-                          QRect(0, 0, g.m_image.m_width, g.m_image.m_height));
+                          QRect(kSdfBorder, kSdfBorder, g.m_image.m_width - 2*kSdfBorder, g.m_image.m_height - 2*kSdfBorder));
       }
       pen += QPoint(g.m_metrics.m_xAdvance,  g.m_metrics.m_yAdvance);
 
@@ -279,8 +279,6 @@ UNIT_TEST(GlyphLoadingTest)
 
   renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", 27, "be");
   RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-
-#endif
 }
 
 }  // namespace glyph_mng_tests

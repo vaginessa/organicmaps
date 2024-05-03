@@ -16,13 +16,12 @@
 
 #include <ft2build.h>
 #include <harfbuzz/hb-ft.h>
+
 #include <limits>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "3party/sdf_image/sdf_image.h"
 
 #include FT_FREETYPE_H
 #include FT_MODULE_H
