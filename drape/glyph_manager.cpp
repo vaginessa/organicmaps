@@ -255,6 +255,8 @@ public:
 
   void Shape(hb_buffer_t * hbBuffer, int fontPixelSize, int fontIndex, text_shape::TextMetrics & outMetrics)
   {
+    // TODO(AB): This code is not thread safe.
+
     // TODO(AB): Do not set the same font size every time.
     FREETYPE_CHECK(FT_Set_Pixel_Sizes(m_fontFace, 0 /* pixel_width */, fontPixelSize /* pixel_height */));
     if (!m_harfbuzzFont)
@@ -273,7 +275,8 @@ public:
       // TODO(AB): Check for missing glyph ID?
       auto const glyphId = static_cast<uint16_t>(glyphInfo[i].codepoint);
 
-      static FT_Int32 constexpr flags =  FT_LOAD_DEFAULT;
+      // TODO(AB): Load each glyph only once for the given font size? Or is run cache more efficient?
+      FT_Int32 constexpr flags = FT_LOAD_DEFAULT;
       FT_Load_Glyph(m_fontFace, glyphId, flags);
 
       auto const & currPos = glyphPos[i];
@@ -655,6 +658,7 @@ void GlyphManager::ShapeText(strings::UniChar c, hb_buffer_t * hbBuffer, int pix
   int const fontIndex = GetFontIndex(c);
   if (fontIndex < 0)
   {
+    // TODO(AB): Add missing glyph character's metrics
     LOG(LWARNING, ("Skip run because no font was found for character", NumToHex(c)));
     return;
   }

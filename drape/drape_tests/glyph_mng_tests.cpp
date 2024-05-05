@@ -43,7 +43,7 @@ class GlyphRenderer
   int m_fontPixelSize;
   char const * m_lang;
 
-  static constexpr FT_Int kSdfSpread {2};
+  static constexpr FT_Int kSdfSpread {dp::kSdfBorder};
 
 public:
   GlyphRenderer()
@@ -96,16 +96,12 @@ public:
     QPainter painter(device);
     painter.fillRect(QRectF(0.0, 0.0, device->width(), device->height()), Qt::white);
 
-    text_shape::TextMetrics const metrics = text_shape::ShapeText(m_utf8, m_fontPixelSize, m_lang, [&](auto c, auto buf, auto height, auto & out) { m_mng->ShapeText(c, buf, height, out); });
-    //std::cout << metrics << '\n';
+    text_shape::TextMetrics const metrics = text_shape::ShapeText(m_utf8, m_fontPixelSize, m_lang, [&](auto c, auto buf, auto height, auto & out)
+    {
+      m_mng->ShapeText(c, buf, height, out);
+    });
 
     QPoint hbPen(10, 100);
-
-    for (auto const & gm : metrics.m_glyphs)
-    {
-      auto image = m_mng->GetGlyphImage(gm.m_font, gm.m_glyphId, m_fontPixelSize, false /* sdf */);
-      image.Destroy();
-    }
 
     auto const hbLanguage = hb_language_from_string(m_lang, -1);
 
@@ -128,15 +124,16 @@ public:
       //auto const fontIndex = m_mng->GetFontIndex(sv);
 
       // "00_NotoNaskhArabic-Regular.ttf"
-      auto reader = GetPlatform().GetReader("06_code2000.ttf");
+      //auto reader = GetPlatform().GetReader("06_code2000.ttf");
+      auto reader = GetPlatform().GetReader("07_roboto_medium.ttf");
       auto fontFile = reader->GetName();
-      FT_Face arabicFace;
-      if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &arabicFace)) {
+      FT_Face face;
+      if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &face)) {
         std::cerr << "Can't load font " << fontFile << '\n';
         return;
       }
       // Set character size
-      FT_Set_Pixel_Sizes(arabicFace, 0 , m_fontPixelSize );
+      FT_Set_Pixel_Sizes(face, 0 , m_fontPixelSize );
       // This also works.
       // if (FT_Set_Char_Size(face, 0, m_fontPixelSize << 6, 0, 0)) {
       //   std::cerr << "Can't set character size\n";
@@ -147,7 +144,7 @@ public:
       //FT_Set_Transform(face, nullptr, nullptr);
 
       // Load font into HarfBuzz
-      hb_font_t *font = hb_ft_font_create(arabicFace, nullptr);
+      hb_font_t *font = hb_ft_font_create(face, nullptr);
 
       // Shape!
       hb_shape(font, buf, nullptr, 0);
@@ -162,10 +159,10 @@ public:
         hb_codepoint_t const glyphid = glyph_info[i].codepoint;
 
         FT_Int32 const flags =  FT_LOAD_RENDER;
-        FT_Load_Glyph(arabicFace, glyphid, flags);
-        FT_Render_Glyph(arabicFace->glyph, FT_RENDER_MODE_SDF);
+        FT_Load_Glyph(face, glyphid, flags);
+        FT_Render_Glyph(face->glyph, FT_RENDER_MODE_SDF);
 
-        FT_GlyphSlot slot = arabicFace->glyph;
+        FT_GlyphSlot slot = face->glyph;
 
         FT_Bitmap const & ftBitmap = slot->bitmap;
 
@@ -194,8 +191,10 @@ public:
         auto const bearing_y = slot->metrics.horiBearingY;//slot->bitmap_top;
 
         auto const & glyphPos = glyph_pos[i];
-        hb_position_t const x_offset  = (glyphPos.x_offset + bearing_x) >> 6;
-        hb_position_t const y_offset  = (glyphPos.y_offset + bearing_y) >> 6;
+        // hb_position_t const x_offset  = (glyphPos.x_offset + bearing_x) >> 6;
+        // hb_position_t const y_offset  = (glyphPos.y_offset + bearing_y) >> 6;
+        hb_position_t const x_offset  = (glyphPos.x_offset) >> 6;
+        hb_position_t const y_offset  = (glyphPos.y_offset) >> 6;
         hb_position_t const x_advance = glyphPos.x_advance >> 6;
         hb_position_t const y_advance = glyphPos.y_advance >> 6;
 
@@ -213,16 +212,17 @@ public:
       // Tidy up.
       hb_buffer_destroy(buf);
       hb_font_destroy(font);
-      FT_Done_Face(arabicFace);
+      FT_Done_Face(face);
     }
 
     //////////////////////////////////////////////////////////////////
     // QT text renderer.
     {
       QPoint pen(10, 150);
-      QFont font("Noto Naskh Arabic");
+      //QFont font("Noto Naskh Arabic");
+      QFont font("Roboto");
       font.setPixelSize(m_fontPixelSize);
-      font.setWeight(QFont::Weight::ExtraLight);
+      //font.setWeight(QFont::Weight::Normal);
       painter.setFont(font);
       painter.drawText(pen, QString::fromUtf8(m_utf8.c_str(), m_utf8.size()));
     }
@@ -260,6 +260,10 @@ UNIT_TEST(GlyphLoadingTest)
   GlyphRenderer renderer;
 
   using namespace std::placeholders;
+
+  renderer.SetString("Тестовая строка", 27, "ru");
+  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+
 
 //  renderer.SetString("ØŒÆ");
 //  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
