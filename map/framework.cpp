@@ -1501,14 +1501,14 @@ void Framework::CreateDrapeEngine(ref_ptr<dp::GraphicsContextFactory> contextFac
   auto const isolinesEnabled = m_isolinesManager.IsEnabled();
 
   auto const simplifiedTrafficColors = m_trafficManager.HasSimplifiedColorScheme();
-  auto const fontsScaleFactor = LoadLargeFontsSize() ? kLargeFontsScaleFactor : 1.0;
 
-  df::DrapeEngine::Params p(
-      params.m_apiVersion, contextFactory,
+  df::VisualParams::Instance().SetFontScale(LoadLargeFontsSize() ? kLargeFontsScaleFactor : 1.0);
+
+  df::DrapeEngine::Params p(params.m_apiVersion, contextFactory,
       dp::Viewport(0, 0, params.m_surfaceWidth, params.m_surfaceHeight),
       df::MapDataProvider(std::move(idReadFn), std::move(featureReadFn),
                           std::move(isCountryLoadedByNameFn), std::move(updateCurrentCountryFn)),
-      params.m_hints, params.m_visualScale, fontsScaleFactor, std::move(params.m_widgetsInitInfo),
+      params.m_hints, params.m_visualScale, std::move(params.m_widgetsInitInfo),
       std::move(myPositionModeChangedFn), allow3dBuildings, trafficEnabled, isolinesEnabled,
       params.m_isChoosePositionMode, params.m_isChoosePositionMode, GetSelectedFeatureTriangles(),
       m_routingManager.IsRoutingActive() && m_routingManager.IsRoutingFollowing(),
@@ -2398,10 +2398,8 @@ void Framework::SetLargeFontsSize(bool isLargeSize)
 {
   settings::Set(kLargeFontsSize, isLargeSize);
 
-  double const scaleFactor = isLargeSize ? kLargeFontsScaleFactor : 1.0;
-
-  ASSERT(m_drapeEngine.get() != nullptr, ());
-  m_drapeEngine->SetFontScaleFactor(scaleFactor);
+  double const fontScale = isLargeSize ? kLargeFontsScaleFactor : 1.0;
+  df::VisualParams::Instance().SetFontScale(fontScale);
 
   InvalidateRect(GetCurrentViewport());
 }

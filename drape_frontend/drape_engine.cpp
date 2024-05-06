@@ -30,8 +30,6 @@ DrapeEngine::DrapeEngine(Params && params)
 
   VisualParams::Init(params.m_vs, df::CalculateTileSize(m_viewport.GetWidth(), m_viewport.GetHeight()));
 
-  SetFontScaleFactor(params.m_fontsScaleFactor);
-
   gui::DrapeGui::Instance().SetSurfaceSize(m2::PointF(m_viewport.GetWidth(), m_viewport.GetHeight()));
 
   m_textureManager = make_unique_dp<dp::TextureManager>();
@@ -820,11 +818,6 @@ void DrapeEngine::EnableIsolines(bool enable)
   m_threadCommutator->PostMessage(ThreadsCommutator::ResourceUploadThread,
                                   make_unique_dp<EnableIsolinesMessage>(enable),
                                   MessagePriority::Normal);
-}
-
-void DrapeEngine::SetFontScaleFactor(double scaleFactor)
-{
-  VisualParams::Instance().SetFontScale(scaleFactor);
 }
 
 void DrapeEngine::RunScenario(ScenarioManager::ScenarioData && scenarioData,

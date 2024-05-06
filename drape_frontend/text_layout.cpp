@@ -3,6 +3,7 @@
 #include "drape_frontend/visual_params.hpp"
 
 #include "drape/bidi.hpp"
+#include "drape/font_constants.hpp"
 
 #include <algorithm>
 #include <iterator>  // std::reverse_iterator
@@ -295,7 +296,7 @@ void TextLayout::Init(strings::UniString && text, float fontSize, ref_ptr<dp::Te
   m_text = std::move(text);
   auto const & vpi = VisualParams::Instance();
   float const fontScale = static_cast<float>(vpi.GetFontScale());
-  float const baseSize = static_cast<float>(vpi.GetGlyphBaseSize());
+  float constexpr baseSize = static_cast<float>(dp::kBaseGlyphHeightInPixels);
   m_textSizeRatio = fontSize * fontScale / baseSize;
   textures->GetGlyphRegions(m_text, m_metrics);
 }
@@ -330,7 +331,7 @@ float TextLayout::GetPixelLength() const
 
 float TextLayout::GetPixelHeight() const
 {
-  return m_textSizeRatio * VisualParams::Instance().GetGlyphBaseSize();
+  return m_textSizeRatio * static_cast<float>(dp::kBaseGlyphHeightInPixels);
 }
 
 strings::UniString const & TextLayout::GetText() const

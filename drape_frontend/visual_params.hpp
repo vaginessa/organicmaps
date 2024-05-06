@@ -58,8 +58,6 @@ public:
   };
 
   GlyphVisualParams const & GetGlyphVisualParams() const;
-  uint32_t GetGlyphSdfScale() const;
-  uint32_t GetGlyphBaseSize() const;
   double GetFontScale() const;
   void SetFontScale(double fontScale);
 

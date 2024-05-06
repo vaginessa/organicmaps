@@ -54,7 +54,7 @@ public:
   {
     Params(dp::ApiVersion apiVersion, ref_ptr<dp::GraphicsContextFactory> factory,
            dp::Viewport const & viewport, MapDataProvider const & model, Hints const & hints,
-           double vs, double fontsScaleFactor, gui::TWidgetsInitInfo && info,
+           double vs, gui::TWidgetsInitInfo && info,
            location::TMyPositionModeChanged && myPositionModeChanged, bool allow3dBuildings,
            bool trafficEnabled, bool isolinesEnabled, bool blockTapEvents,
            bool showChoosePositionMark, std::vector<m2::TriangleD> && boundAreaTriangles,
@@ -68,7 +68,6 @@ public:
       , m_model(model)
       , m_hints(hints)
       , m_vs(vs)
-      , m_fontsScaleFactor(fontsScaleFactor)
       , m_info(std::move(info))
       , m_myPositionModeChanged(std::move(myPositionModeChanged))
       , m_allow3dBuildings(allow3dBuildings)
@@ -91,7 +90,6 @@ public:
     MapDataProvider m_model;
     Hints m_hints;
     double m_vs;
-    double m_fontsScaleFactor;
     gui::TWidgetsInitInfo m_info;
     std::pair<location::EMyPositionMode, bool> m_initialMyPositionMode;
     location::TMyPositionModeChanged m_myPositionModeChanged;
@@ -216,8 +214,6 @@ public:
   void ClearAllTransitSchemeCache();
 
   void EnableIsolines(bool enable);
-
-  void SetFontScaleFactor(double scaleFactor);
 
   void RunScenario(ScenarioManager::ScenarioData && scenarioData,
                    ScenarioManager::ScenarioCallback const & onStartFn,

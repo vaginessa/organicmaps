@@ -1,5 +1,6 @@
 #include "drape/font_texture.hpp"
 
+#include "drape/font_constants.hpp"
 #include "drape/pointers.hpp"
 
 #include "base/logging.hpp"
@@ -172,8 +173,9 @@ bool GlyphIndex::CanBeGlyphPacked(uint32_t glyphsCount) const
   if (m_packer.IsFull())
     return false;
 
+  // TODO(AB): Why is it needed?
   float constexpr kGlyphScalar = 1.5f;
-  auto const baseSize = static_cast<uint32_t>(m_mng->GetBaseGlyphHeight() * kGlyphScalar);
+  uint32_t constexpr baseSize = kBaseGlyphHeightInPixels * kGlyphScalar;
   return m_packer.CanBePacked(glyphsCount, baseSize, baseSize);
 }
 
