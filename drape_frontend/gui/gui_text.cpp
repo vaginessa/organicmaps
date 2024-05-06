@@ -329,8 +329,7 @@ ref_ptr<dp::Texture> MutableLabel::SetAlphabet(std::string const & alphabet,
   return m_alphabet[0].second.GetTexture();
 }
 
-void MutableLabel::Precache(PrecacheParams const & params, PrecacheResult & result,
-                            ref_ptr<dp::TextureManager> mng)
+void MutableLabel::Precache(PrecacheParams const & params, PrecacheResult & result, ref_ptr<dp::TextureManager> mng)
 {
   SetMaxLength(static_cast<uint16_t>(params.m_maxLength));
   result.m_state.SetMaskTexture(SetAlphabet(params.m_alphabet, mng));
@@ -348,8 +347,7 @@ void MutableLabel::Precache(PrecacheParams const & params, PrecacheResult & resu
   glsl::vec2 outlineTex = glsl::ToVec2(outlineColor.GetTexRect().Center());
 
   auto const vertexCount = static_cast<size_t>(m_maxLength) * 4;
-  result.m_buffer.resize(vertexCount,
-                         StaticVertex(glsl::vec3(0.0, 0.0, 0.0), colorTex, outlineTex));
+  result.m_buffer.resize(vertexCount, StaticVertex(glsl::vec3(0.0, 0.0, 0.0), colorTex, outlineTex));
 
   float depth = 0.0f;
   for (size_t i = 0; i < vertexCount; i += 4)
@@ -377,7 +375,7 @@ void MutableLabel::Precache(PrecacheParams const & params, PrecacheResult & resu
 void MutableLabel::SetText(LabelResult & result, std::string_view text) const
 {
   strings::UniString uniText = bidi::log2vis(text.size() <= m_maxLength ? text
-      : std::string{text}.erase(static_cast<size_t>(m_maxLength - 3)) + "...");
+      : std::string{text}.erase(static_cast<size_t>(m_maxLength - 3)) + "…");
 
   float maxHeight = 0.0f;
   float length = 0.0f;
