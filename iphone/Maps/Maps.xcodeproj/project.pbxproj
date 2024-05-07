@@ -477,6 +477,8 @@
 		EDE205012BEA85B50054CA18 /* RecentlyDeletedCategoriesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE204FC2BEA85B50054CA18 /* RecentlyDeletedCategoriesViewController.swift */; };
 		EDE205022BEA85B50054CA18 /* RecentlyDeletedTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE204FD2BEA85B50054CA18 /* RecentlyDeletedTableViewCell.swift */; };
 		EDE205032BEA85B50054CA18 /* RecentlyDeletedCategoriesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE204FE2BEA85B50054CA18 /* RecentlyDeletedCategoriesViewModel.swift */; };
+		EDE205112BEA86920054CA18 /* RecentlyDeletedCategoriesViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE205052BEA85CA0054CA18 /* RecentlyDeletedCategoriesViewModelTests.swift */; };
+		EDE205122BEA86960054CA18 /* MockRecentlyDeletedCategoriesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE205062BEA85CA0054CA18 /* MockRecentlyDeletedCategoriesManager.swift */; };
 		EDE243DD2B6D2E640057369B /* AboutController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE243D52B6CF3980057369B /* AboutController.swift */; };
 		EDE243E52B6D3F400057369B /* OSMView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE243E42B6D3F400057369B /* OSMView.swift */; };
 		EDE243E72B6D55610057369B /* InfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDE243E02B6D3EA00057369B /* InfoView.swift */; };
@@ -1371,6 +1373,8 @@
 		EDE204FC2BEA85B50054CA18 /* RecentlyDeletedCategoriesViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentlyDeletedCategoriesViewController.swift; sourceTree = "<group>"; };
 		EDE204FD2BEA85B50054CA18 /* RecentlyDeletedTableViewCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentlyDeletedTableViewCell.swift; sourceTree = "<group>"; };
 		EDE204FE2BEA85B50054CA18 /* RecentlyDeletedCategoriesViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentlyDeletedCategoriesViewModel.swift; sourceTree = "<group>"; };
+		EDE205052BEA85CA0054CA18 /* RecentlyDeletedCategoriesViewModelTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecentlyDeletedCategoriesViewModelTests.swift; sourceTree = "<group>"; };
+		EDE205062BEA85CA0054CA18 /* MockRecentlyDeletedCategoriesManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockRecentlyDeletedCategoriesManager.swift; sourceTree = "<group>"; };
 		EDE243D52B6CF3980057369B /* AboutController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutController.swift; sourceTree = "<group>"; };
 		EDE243E02B6D3EA00057369B /* InfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InfoView.swift; sourceTree = "<group>"; };
 		EDE243E42B6D3F400057369B /* OSMView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OSMView.swift; sourceTree = "<group>"; };
@@ -2982,6 +2986,7 @@
 		ED1ADA312BC6B19E0029209F /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				EDE205042BEA85CA0054CA18 /* RecentlyDeletedCategoriesTests */,
 				ED1ADA322BC6B1B40029209F /* CarPlayServiceTests.swift */,
 			);
 			path = Tests;
@@ -3011,6 +3016,15 @@
 				EDE204FE2BEA85B50054CA18 /* RecentlyDeletedCategoriesViewModel.swift */,
 			);
 			path = RecentlyDeleted;
+			sourceTree = "<group>";
+		};
+		EDE205042BEA85CA0054CA18 /* RecentlyDeletedCategoriesTests */ = {
+			isa = PBXGroup;
+			children = (
+				EDE205052BEA85CA0054CA18 /* RecentlyDeletedCategoriesViewModelTests.swift */,
+				EDE205062BEA85CA0054CA18 /* MockRecentlyDeletedCategoriesManager.swift */,
+			);
+			path = RecentlyDeletedCategoriesTests;
 			sourceTree = "<group>";
 		};
 		EDFDFB412B7108090013A44C /* AboutController */ = {
@@ -4491,7 +4505,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EDE205112BEA86920054CA18 /* RecentlyDeletedCategoriesViewModelTests.swift in Sources */,
 				ED1ADA332BC6B1B40029209F /* CarPlayServiceTests.swift in Sources */,
+				EDE205122BEA86960054CA18 /* MockRecentlyDeletedCategoriesManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
