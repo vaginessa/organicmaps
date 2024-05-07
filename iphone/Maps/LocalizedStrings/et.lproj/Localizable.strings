@@ -1275,6 +1275,18 @@
 
 "drive_through" = "Läbi sõit";
 
+/* Text for the "Delete All" button on the Recently Deleted screen */
+"delete_all" = "Kustuta kõik";
+
+/* Text for the "Recover" button on the Recently Deleted screen */
+"recover" = "Taasta";
+
+/* Text for the "Recover All" button on the Recently Deleted screen */
+"recover_all" = "Taasta kõik";
+
+/* Title for the Recently Deleted screen */
+"bookmarks_recently_deleted" = "Hiljuti kustutatud";
+
 
 /********** Types **********/
 
