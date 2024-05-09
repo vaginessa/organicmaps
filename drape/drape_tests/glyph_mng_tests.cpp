@@ -123,9 +123,11 @@ public:
       std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
       //auto const fontIndex = m_mng->GetFontIndex(sv);
 
+      std::string lang = m_lang;
+      std::string fontFileName = lang == "ar" ? "00_NotoNaskhArabic-Regular.ttf" : "07_roboto_medium.ttf";
       // "00_NotoNaskhArabic-Regular.ttf"
       //auto reader = GetPlatform().GetReader("06_code2000.ttf");
-      auto reader = GetPlatform().GetReader("07_roboto_medium.ttf");
+      auto reader = GetPlatform().GetReader(fontFileName);
       auto fontFile = reader->GetName();
       FT_Face face;
       if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &face)) {
@@ -261,7 +263,9 @@ UNIT_TEST(GlyphLoadingTest)
 
   using namespace std::placeholders;
 
-  renderer.SetString("Тестовая строка", 27, "ru");
+  constexpr int fontSize = 54;
+
+  renderer.SetString("Тестовая строка", fontSize, "ru");
   RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
 
@@ -269,7 +273,7 @@ UNIT_TEST(GlyphLoadingTest)
 //  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
   //renderer.SetString("الحلّة گلها");
-  renderer.SetString("الحلّة گلها"" كسول الزنجبيل القط""56""عين علي (الحربية)""123"" اَلْعَرَبِيَّةُ", 27, "ar");
+  renderer.SetString("الحلّة گلها"" كسول الزنجبيل القط""56""عين علي (الحربية)""123"" اَلْعَرَبِيَّةُ", fontSize, "ar");
   RunTestLoop("Test2", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
   // renderer.SetString("12345""گُلها""12345""گُلها""12345", 27, "ar");
@@ -278,10 +282,10 @@ UNIT_TEST(GlyphLoadingTest)
 //  renderer.SetString("മനക്കലപ്പടി");
 //  RunTestLoop("Test4", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  // renderer.SetString("Test 12 345 ""گُلها""678 9000 Test", 27, "ar");
+  // renderer.SetString("Test 12 345 ""گُلها""678 9000 Test", fontSize, "ar");
   // RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", 27, "be");
+  renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", fontSize, "be");
   RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 }
 
