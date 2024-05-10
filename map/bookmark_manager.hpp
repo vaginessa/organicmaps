@@ -603,7 +603,7 @@ private:
   std::string GetMetadataEntryName(kml::MarkGroupId groupId) const;
 
   void NotifyAboutStartAsyncLoading();
-  void NotifyAboutFinishAsyncLoading(KMLDataCollectionPtr && collection);
+  void NotifyAboutFinishAsyncLoading(KMLDataCollectionPtr && collection, bool needsToClearCategories);
   void NotifyAboutFile(bool success, std::string const & filePath, bool isTemporaryFile);
   void LoadBookmarkRoutine(std::string const & filePath, bool isTemporaryFile);
 

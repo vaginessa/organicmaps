@@ -1940,7 +1940,6 @@ BookmarkManager::KMLDataCollectionPtr BookmarkManager::LoadBookmarks(
 void BookmarkManager::LoadBookmarks()
 {
   CHECK_THREAD_CHECKER(m_threadChecker, ());
-  ClearCategories();
   LoadMetadata();
 
   m_loadBookmarksFinished = false;
@@ -1955,7 +1954,7 @@ void BookmarkManager::LoadBookmarks()
 
     if (m_needTeardown)
       return;
-    NotifyAboutFinishAsyncLoading(std::move(collection));
+    NotifyAboutFinishAsyncLoading(std::move(collection), true);
   });
 
   LoadState();
@@ -2022,7 +2021,7 @@ void BookmarkManager::LoadBookmarkRoutine(std::string const & filePath, bool isT
       return;
 
     NotifyAboutFile(!collection->empty() /* success */, filePath, isTemporaryFile);
-    NotifyAboutFinishAsyncLoading(std::move(collection));
+    NotifyAboutFinishAsyncLoading(std::move(collection), false);
   });
 }
 
@@ -2039,13 +2038,16 @@ void BookmarkManager::NotifyAboutStartAsyncLoading()
   });
 }
 
-void BookmarkManager::NotifyAboutFinishAsyncLoading(KMLDataCollectionPtr && collection)
+void BookmarkManager::NotifyAboutFinishAsyncLoading(KMLDataCollectionPtr && collection, bool needsToClearCategories)
 {
   if (m_needTeardown)
     return;
 
-  GetPlatform().RunTask(Platform::Thread::Gui, [this, collection]()
+  GetPlatform().RunTask(Platform::Thread::Gui, [this, collection, needsToClearCategories]()
   {
+    if (needsToClearCategories)
+      ClearCategories();
+
     if (!collection->empty())
     {
       CreateCategories(std::move(*collection), true /* autoSave */);
