@@ -287,8 +287,9 @@ public:
       hb_position_t const xOffset  = (currPos.x_offset + static_cast<int32_t>(m_fontFace->glyph->metrics.horiBearingX)) >> 6;
       hb_position_t const yOffset  = (currPos.y_offset + static_cast<int32_t>(m_fontFace->glyph->metrics.horiBearingY)) >> 6;
       hb_position_t const xAdvance = currPos.x_advance >> 6;
+      auto const height = static_cast<int32_t>(m_fontFace->glyph->metrics.height >> 6);
 
-      outMetrics.AddGlyphMetrics(static_cast<int16_t>(fontIndex), glyphId, xOffset, yOffset, xAdvance);
+      outMetrics.AddGlyphMetrics(static_cast<int16_t>(fontIndex), glyphId, xOffset, yOffset, xAdvance, height);
     }
   }
 

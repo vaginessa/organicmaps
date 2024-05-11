@@ -68,13 +68,15 @@ struct GlyphMetrics
 
 struct TextMetrics
 {
-  int32_t m_width {0};
+  int32_t m_lineWidthInPixels {0};
+  int32_t m_maxLineHeightInPixels {0};
   std::vector<GlyphMetrics> m_glyphs;
 
-  void AddGlyphMetrics(int16_t font, uint16_t glyphId, int32_t xOffset, int32_t yOffset, int32_t xAdvance)
+  void AddGlyphMetrics(int16_t font, uint16_t glyphId, int32_t xOffset, int32_t yOffset, int32_t xAdvance, int32_t height)
   {
     m_glyphs.push_back({font, glyphId, xOffset, yOffset, xAdvance});
-    m_width += xAdvance;
+    m_lineWidthInPixels += xAdvance;
+    m_maxLineHeightInPixels = std::max(m_maxLineHeightInPixels, height);
   }
 };
 

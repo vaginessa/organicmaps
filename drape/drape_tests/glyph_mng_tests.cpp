@@ -29,7 +29,7 @@ namespace glyph_mng_tests
 {
 std::ostream& operator<<(std::ostream & stream, const text_shape::TextMetrics & tm)
 {
-  stream << "width=" << tm.m_width << " [\n";
+  stream << "width=" << tm.m_lineWidthInPixels << " [\n";
   for (auto const & gm : tm.m_glyphs)
     stream << "font=" << gm.m_font << ", id=" << gm.m_glyphId << ", xo=" << gm.m_xOffset << ", yo=" << gm.m_yOffset << ", xa=" << gm.m_xAdvance << '\n';
   stream << ']';
@@ -101,7 +101,8 @@ public:
       m_mng->ShapeText(c, buf, height, out);
     });
 
-    std::cout << "Total width: " << metrics.m_width << '\n';
+    std::cout << "Total width: " << metrics.m_lineWidthInPixels << '\n';
+    std::cout << "Max height: " << metrics.m_maxLineHeightInPixels << '\n';
 
     QPoint pen(10, 50);
 
@@ -291,13 +292,17 @@ UNIT_TEST(GlyphLoadingTest)
 
   constexpr int fontSize = 27;
 
-  // renderer.SetString("Тестовая строка", fontSize, "ru");
-  // RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  renderer.SetString("Тестовая строка", fontSize, "ru");
+  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
   //
   // renderer.SetString("ØŒÆ", fontSize, "en");
   // RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
   //
-  //renderer.SetString("الحلّة گلها");
+
+  // renderer.SetString("𫝚 𫝛 𫝜", fontSize, "zh");
+  // RunTestLoop("CJK Surrogates", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+
+
   renderer.SetString("الحلّة گلها"" كسول الزنجبيل القط""56""عين علي (الحربية)""123"" اَلْعَرَبِيَّةُ", fontSize, "ar");
   RunTestLoop("Test2", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
