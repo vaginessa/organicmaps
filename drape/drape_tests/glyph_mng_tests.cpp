@@ -101,120 +101,146 @@ public:
       m_mng->ShapeText(c, buf, height, out);
     });
 
-    QPoint hbPen(10, 100);
+    std::cout << "Total width: " << metrics.m_width << '\n';
 
-    auto const hbLanguage = hb_language_from_string(m_lang, -1);
+    QPoint pen(10, 50);
 
-    auto runs = text_shape::ItemizeText(m_utf8);
-    text_shape::ReorderRTL(runs);
-    for (auto const& substring : runs.substrings)
+    for (auto const & glyph : metrics.m_glyphs)
     {
-      hb_buffer_t *buf = hb_buffer_create();
-      hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(runs.text.data()), runs.text.size(), substring.m_start, substring.m_length);
-      //hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(sv.data()), substring.m_length, 0, substring.m_length);
-      // If you know the direction, script, and language
-      hb_buffer_set_direction(buf, substring.m_direction);
-      hb_buffer_set_script(buf, substring.m_script);
-      hb_buffer_set_language(buf, hbLanguage);
+      constexpr bool kUseSdfBitmap = false;
+      GlyphImage img = m_mng->GetGlyphImage(glyph.m_font, glyph.m_glyphId, m_fontPixelSize, kUseSdfBitmap);
 
-      // If direction, script, and language are not known.
-      // hb_buffer_guess_segment_properties(buf);
-
-      std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
-      //auto const fontIndex = m_mng->GetFontIndex(sv);
-
-      std::string lang = m_lang;
-      std::string fontFileName = lang == "ar" ? "00_NotoNaskhArabic-Regular.ttf" : "07_roboto_medium.ttf";
-      // "00_NotoNaskhArabic-Regular.ttf"
-      //auto reader = GetPlatform().GetReader("06_code2000.ttf");
-      auto reader = GetPlatform().GetReader(fontFileName);
-      auto fontFile = reader->GetName();
-      FT_Face face;
-      if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &face)) {
-        std::cerr << "Can't load font " << fontFile << '\n';
-        return;
-      }
-      // Set character size
-      FT_Set_Pixel_Sizes(face, 0 , m_fontPixelSize );
-      // This also works.
-      // if (FT_Set_Char_Size(face, 0, m_fontPixelSize << 6, 0, 0)) {
-      //   std::cerr << "Can't set character size\n";
-      //   return;
-      // }
-
-      // Set no transform (identity)
-      //FT_Set_Transform(face, nullptr, nullptr);
-
-      // Load font into HarfBuzz
-      hb_font_t *font = hb_ft_font_create(face, nullptr);
-
-      // Shape!
-      hb_shape(font, buf, nullptr, 0);
-
-      // Get the glyph and position information.
-      unsigned int glyph_count;
-      hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
-      hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
-
-      for (unsigned int i = 0; i < glyph_count; i++)
+      auto const w = img.m_width;
+      auto const h = img.m_height;
+      // Spaces do not have images.
+      if (w && h)
       {
-        hb_codepoint_t const glyphid = glyph_info[i].codepoint;
-
-        FT_Int32 const flags =  FT_LOAD_RENDER;
-        FT_Load_Glyph(face, glyphid, flags);
-        FT_Render_Glyph(face->glyph, FT_RENDER_MODE_SDF);
-
-        FT_GlyphSlot slot = face->glyph;
-
-        FT_Bitmap const & ftBitmap = slot->bitmap;
-
-        auto const buffer = ftBitmap.buffer;
-        auto const width = ftBitmap.width;
-        auto const height = ftBitmap.rows;
-
-        for (unsigned h = 0; h < height; ++h)
-        {
-          for (unsigned w = 0; w < width; ++w)
-          {
-           auto curPixelAddr = buffer + h * width + w;
-           float currPixel = *curPixelAddr;
-           //float sd = (currPixel - 128.f) / spread;
-           // float sd = currPixel - 128.0f;
-           // // Convert to pixel values.
-           // sd = ( sd / 128.0f ) * spread;
-           // // Store `sd` in a buffer or use as required.
-            currPixel = PixelColorFromDistance(currPixel);
-           //currPixel = currPixel - 128.f <= -2 ? 0 : 255;
-           *curPixelAddr = (unsigned char)currPixel;
-          }
-        }
-
-        auto const bearing_x = slot->metrics.horiBearingX;//slot->bitmap_left;
-        auto const bearing_y = slot->metrics.horiBearingY;//slot->bitmap_top;
-
-        auto const & glyphPos = glyph_pos[i];
-        // hb_position_t const x_offset  = (glyphPos.x_offset + bearing_x) >> 6;
-        // hb_position_t const y_offset  = (glyphPos.y_offset + bearing_y) >> 6;
-        hb_position_t const x_offset  = (glyphPos.x_offset) >> 6;
-        hb_position_t const y_offset  = (glyphPos.y_offset) >> 6;
-        hb_position_t const x_advance = glyphPos.x_advance >> 6;
-        hb_position_t const y_advance = glyphPos.y_advance >> 6;
-
-        // Empty images are possible for space characters.
-        if (width != 0 && height != 0)
-        {
-          QPoint currentPen = hbPen;
-          currentPen.rx() += x_offset;
-          currentPen.ry() -= y_offset;
-          painter.drawImage(currentPen, CreateImage(width, height, buffer), QRect(kSdfSpread, kSdfSpread, width - 2*kSdfSpread, height - 2*kSdfSpread));
-        }
-        hbPen += QPoint(x_advance, y_advance);
+        QPoint currentPen = pen;
+        currentPen.rx() += glyph.m_xOffset;
+        currentPen.ry() -= glyph.m_yOffset;
+        painter.drawImage(currentPen, CreateImage(w, h, img.m_data->data()), QRect(0, 0, w, h));
       }
+      pen += QPoint(glyph.m_xAdvance, 0);
 
-      // Tidy up.
-      hb_buffer_destroy(buf);
-      hb_font_destroy(font);
-      FT_Done_Face(face);
+      img.Destroy();
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Manual rendering using HB functions.
+    {
+      QPoint hbPen(10, 100);
+
+      auto const hbLanguage = hb_language_from_string(m_lang, -1);
+
+      auto runs = text_shape::ItemizeText(m_utf8);
+      text_shape::ReorderRTL(runs);
+      for (auto const & substring : runs.substrings)
+      {
+        hb_buffer_t * buf = hb_buffer_create();
+        hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(runs.text.data()), runs.text.size(), substring.m_start, substring.m_length);
+        //hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(sv.data()), substring.m_length, 0, substring.m_length);
+        // If you know the direction, script, and language
+        hb_buffer_set_direction(buf, substring.m_direction);
+        hb_buffer_set_script(buf, substring.m_script);
+        hb_buffer_set_language(buf, hbLanguage);
+
+        // If direction, script, and language are not known.
+        // hb_buffer_guess_segment_properties(buf);
+
+        std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
+        //auto const fontIndex = m_mng->GetFontIndex(sv);
+
+        std::string lang = m_lang;
+        std::string fontFileName = lang == "ar" ? "00_NotoNaskhArabic-Regular.ttf" : "07_roboto_medium.ttf";
+        // "00_NotoNaskhArabic-Regular.ttf"
+        //auto reader = GetPlatform().GetReader("06_code2000.ttf");
+        auto reader = GetPlatform().GetReader(fontFileName);
+        auto fontFile = reader->GetName();
+        FT_Face face;
+        if (FT_New_Face(m_freetypeLibrary, fontFile.c_str(), 0, &face)) {
+          std::cerr << "Can't load font " << fontFile << '\n';
+          return;
+        }
+        // Set character size
+        FT_Set_Pixel_Sizes(face, 0 , m_fontPixelSize );
+        // This also works.
+        // if (FT_Set_Char_Size(face, 0, m_fontPixelSize << 6, 0, 0)) {
+        //   std::cerr << "Can't set character size\n";
+        //   return;
+        // }
+
+        // Set no transform (identity)
+        //FT_Set_Transform(face, nullptr, nullptr);
+
+        // Load font into HarfBuzz
+        hb_font_t *font = hb_ft_font_create(face, nullptr);
+
+        // Shape!
+        hb_shape(font, buf, nullptr, 0);
+
+        // Get the glyph and position information.
+        unsigned int glyph_count;
+        hb_glyph_info_t *glyph_info    = hb_buffer_get_glyph_infos(buf, &glyph_count);
+        hb_glyph_position_t *glyph_pos = hb_buffer_get_glyph_positions(buf, &glyph_count);
+
+        for (unsigned int i = 0; i < glyph_count; i++)
+        {
+          hb_codepoint_t const glyphid = glyph_info[i].codepoint;
+
+          FT_Int32 const flags =  FT_LOAD_RENDER;
+          FT_Load_Glyph(face, glyphid, flags);
+          FT_Render_Glyph(face->glyph, FT_RENDER_MODE_SDF);
+
+          FT_GlyphSlot slot = face->glyph;
+
+          FT_Bitmap const & ftBitmap = slot->bitmap;
+
+          auto const buffer = ftBitmap.buffer;
+          auto const width = ftBitmap.width;
+          auto const height = ftBitmap.rows;
+
+          for (unsigned h = 0; h < height; ++h)
+          {
+            for (unsigned w = 0; w < width; ++w)
+            {
+              auto curPixelAddr = buffer + h * width + w;
+              float currPixel = *curPixelAddr;
+              //float sd = (currPixel - 128.f) / spread;
+              // float sd = currPixel - 128.0f;
+              // // Convert to pixel values.
+              // sd = ( sd / 128.0f ) * spread;
+              // // Store `sd` in a buffer or use as required.
+              currPixel = PixelColorFromDistance(currPixel);
+              //currPixel = currPixel - 128.f <= -2 ? 0 : 255;
+              *curPixelAddr = (unsigned char)currPixel;
+            }
+          }
+
+          auto const bearing_x = slot->metrics.horiBearingX;//slot->bitmap_left;
+          auto const bearing_y = slot->metrics.horiBearingY;//slot->bitmap_top;
+
+          auto const & glyphPos = glyph_pos[i];
+          hb_position_t const x_offset  = (glyphPos.x_offset + bearing_x) >> 6;
+          hb_position_t const y_offset  = (glyphPos.y_offset + bearing_y) >> 6;
+          hb_position_t const x_advance = glyphPos.x_advance >> 6;
+          hb_position_t const y_advance = glyphPos.y_advance >> 6;
+
+          // Empty images are possible for space characters.
+          if (width != 0 && height != 0)
+          {
+            QPoint currentPen = hbPen;
+            currentPen.rx() += x_offset;
+            currentPen.ry() -= y_offset;
+            painter.drawImage(currentPen, CreateImage(width, height, buffer), QRect(kSdfSpread, kSdfSpread, width - 2*kSdfSpread, height - 2*kSdfSpread));
+          }
+          hbPen += QPoint(x_advance, y_advance);
+        }
+
+        // Tidy up.
+        hb_buffer_destroy(buf);
+        hb_font_destroy(font);
+        FT_Done_Face(face);
+      }
     }
 
     //////////////////////////////////////////////////////////////////
@@ -231,7 +257,7 @@ public:
 
     //////////////////////////////////////////////////////////////////
     // Old drape renderer.
-    QPoint pen(10, 200);
+    pen = QPoint(10, 200);
     for (auto c : m_bidiToDraw)
     {
       auto g = m_mng->GetGlyph(c);
@@ -263,30 +289,32 @@ UNIT_TEST(GlyphLoadingTest)
 
   using namespace std::placeholders;
 
-  constexpr int fontSize = 54;
+  constexpr int fontSize = 27;
 
-  renderer.SetString("Тестовая строка", fontSize, "ru");
-  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-
-
-//  renderer.SetString("ØŒÆ");
-//  RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-
+  // renderer.SetString("Тестовая строка", fontSize, "ru");
+  // RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  //
+  // renderer.SetString("ØŒÆ", fontSize, "en");
+  // RunTestLoop("Test1", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  //
   //renderer.SetString("الحلّة گلها");
   renderer.SetString("الحلّة گلها"" كسول الزنجبيل القط""56""عين علي (الحربية)""123"" اَلْعَرَبِيَّةُ", fontSize, "ar");
   RunTestLoop("Test2", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 
-  // renderer.SetString("12345""گُلها""12345""گُلها""12345", 27, "ar");
+  // renderer.SetString("12345""گُلها""12345""گُلها""12345", fontSize, "ar");
   // RunTestLoop("Test3", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-//
-//  renderer.SetString("മനക്കലപ്പടി");
-//  RunTestLoop("Test4", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-
+  //
+  // renderer.SetString("മനക്കലപ്പടി", fontSize, "ml");
+  // RunTestLoop("Test4", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  //
   // renderer.SetString("Test 12 345 ""گُلها""678 9000 Test", fontSize, "ar");
   // RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
-
-  renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", fontSize, "be");
-  RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  //
+  // renderer.SetString("NFKC Razdoĺny NFKD Razdoĺny", fontSize, "be");
+  // RunTestLoop("Test5", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
+  //
+  // renderer.SetString("𐰀𐰁𐰂𐰃𐰄𐰅𐰆𐰇𐰈𐰉𐰊𐰋𐰌𐰍𐰎𐰏𐰐𐰑 мова 𐰒𐰓𐰔𐰕𐰖𐰗𐰘𐰙𐰚𐰛𐰜𐰝𐰞𐰟𐰠𐰡𐰢 Eng 𐰣𐰤", fontSize, "tr");
+  // RunTestLoop("Old Turkic", std::bind(&GlyphRenderer::RenderGlyphs, &renderer, _1));
 }
 
 }  // namespace glyph_mng_tests

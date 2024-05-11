@@ -512,11 +512,12 @@ TextMetrics ShapeRuns(TextRuns const & runs, ShapeHarfbuzzBufferFn && shaperFn, 
     hb_buffer_clear_contents(buf);
 
     // TODO(AB): Some substrings use different fonts.
+    // TODO(AB): Will surrogates work properly? Would it be safer to convert/use utf-32?
     std::u16string_view const sv{runs.text.data() + substring.m_start, static_cast<size_t>(substring.m_length)};
     auto it{runs.text.begin() + substring.m_start};
     auto const c32 = utf8::unchecked::next16(it);
-
-    hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(sv.data()), static_cast<int>(sv.size()), substring.m_start, substring.m_length);
+    hb_buffer_add_utf16(buf, reinterpret_cast<const uint16_t *>(runs.text.data()), static_cast<int>(runs.text.size()),
+                        substring.m_start, substring.m_length);
     hb_buffer_set_direction(buf, substring.m_direction);
     hb_buffer_set_script(buf, substring.m_script);
     hb_buffer_set_language(buf, hbLanguage);
@@ -566,7 +567,8 @@ void ReorderRTL(TextRuns & runs)
 
 TextMetrics ShapeText(std::string_view utf8, int fontPixelHeight, int8_t lang, ShapeHarfbuzzBufferFn && shapeFn)
 {
-  auto const runs = ItemizeText(utf8);
+  auto runs = ItemizeText(utf8);
+  ReorderRTL(runs);
   // TODO(AB): Optimize language conversion.
   hb_language_t const hbLanguage = OrganicMapsLanguageToHarfbuzzLanguage(lang);
 

@@ -47,7 +47,7 @@ public:
   int GetFontIndex(std::u16string_view sv);
 
   void ShapeText(strings::UniChar c, hb_buffer_t * hbBuffer, int pixelHeight, text_shape::TextMetrics & outMetrics);
-  GlyphImage GetGlyphImage(int fontIndex, int16_t glyphId, int pixelHeight, bool sdf);
+  GlyphImage GetGlyphImage(int fontIndex, uint16_t glyphId, int pixelHeight, bool sdf);
 private:
   // Immutable version can be called from any thread and doesn't require internal synchronization.
   int GetFontIndexImmutable(strings::UniChar unicodePoint) const;

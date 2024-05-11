@@ -185,7 +185,7 @@ public:
     return result;
   }
 
-  GlyphImage GetGlyphImage(int16_t glyphId, int pixelHeight, bool sdf) const
+  GlyphImage GetGlyphImage(uint16_t glyphId, int pixelHeight, bool sdf) const
   {
     FREETYPE_CHECK(FT_Set_Pixel_Sizes(m_fontFace, 0, pixelHeight));
     FREETYPE_CHECK(FT_Load_Glyph(m_fontFace, glyphId, FT_LOAD_DEFAULT | FT_LOAD_TARGET_NORMAL));
@@ -261,6 +261,9 @@ public:
     FREETYPE_CHECK(FT_Set_Pixel_Sizes(m_fontFace, 0 /* pixel_width */, fontPixelSize /* pixel_height */));
     if (!m_harfbuzzFont)
       m_harfbuzzFont = hb_ft_font_create(m_fontFace, nullptr);
+    //else
+    // Call on each font size change.
+    //  hb_ft_font_changed(m_harfbuzzFont);
 
     // Shape!
     hb_shape(m_harfbuzzFont, hbBuffer, nullptr, 0);
@@ -277,7 +280,7 @@ public:
 
       // TODO(AB): Load each glyph only once for the given font size? Or is run cache more efficient?
       FT_Int32 constexpr flags = FT_LOAD_DEFAULT;
-      FT_Load_Glyph(m_fontFace, glyphId, flags);
+      FREETYPE_CHECK(FT_Load_Glyph(m_fontFace, glyphId, flags));
 
       auto const & currPos = glyphPos[i];
       // TODO(AB): Use floats for subpixel precision?
@@ -287,7 +290,6 @@ public:
 
       outMetrics.AddGlyphMetrics(static_cast<int16_t>(fontIndex), glyphId, xOffset, yOffset, xAdvance);
     }
-
   }
 
 private:
@@ -666,7 +668,7 @@ void GlyphManager::ShapeText(strings::UniChar c, hb_buffer_t * hbBuffer, int pix
   m_impl->m_fonts[fontIndex]->Shape(hbBuffer, pixelHeight, fontIndex, outMetrics);
 }
 
-GlyphImage GlyphManager::GetGlyphImage(int fontIndex, int16_t glyphId, int pixelHeight, bool sdf)
+GlyphImage GlyphManager::GetGlyphImage(int fontIndex, uint16_t glyphId, int pixelHeight, bool sdf)
 {
   return m_impl->m_fonts[fontIndex]->GetGlyphImage(glyphId, pixelHeight, sdf);
 }
